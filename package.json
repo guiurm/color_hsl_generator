@@ -4,7 +4,10 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "start": "node src/index.js"
+        "format": "prettier --ignore-path .prettierignore --write src/",
+        "dev": "npm run build && npm run start",
+        "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json && rollup -c",
+        "start": "node build/index.mjs"
     },
     "keywords": [],
     "author": "",
@@ -22,7 +25,17 @@
         "winston": "^3.17.0"
     },
     "devDependencies": {
+        "@rollup/plugin-alias": "^5.1.1",
+        "@rollup/plugin-node-resolve": "^16.0.1",
+        "@types/compression": "^1.8.0",
+        "@types/cors": "^2.8.18",
         "@types/express": "^5.0.1",
-        "@types/node": "^22.15.18"
+        "@types/morgan": "^1.9.9",
+        "@types/node": "^22.15.18",
+        "prettier": "^3.5.3",
+        "rollup": "^4.41.0",
+        "rollup-plugin-dts": "^6.2.1",
+        "tsc-alias": "^1.8.16",
+        "typescript": "^5.8.3"
     }
 }
