@@ -1,4 +1,4 @@
-import convert from 'color-convert';
+import Color, { ColorInstance } from 'color';
 
 function isHexColor(hex: string) {
     const hexColorRegex = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
@@ -6,87 +6,64 @@ function isHexColor(hex: string) {
 }
 
 const genPalette = (hex: string, step = 50) => {
-    const [h, s, l] = convert.hex.hsl(hex);
+    const baseColor = Color(hex);
+    const { h, s, l } = baseColor.hsl().object();
 
     const lPorcentaje = parseInt((l / 10).toString()) * 100;
-    const index = 1000 - lPorcentaje;
+    const mainIndex = 1000 - lPorcentaje;
 
     const colors = {
-        hex: {} as { hex: string; textLuminance: 'light' | 'dark' },
-        rgb: {} as { r: number; g: number; b: number; textLuminance: 'light' | 'dark' },
-        hsl: {} as { h: number; s: number; l: number; textLuminance: 'light' | 'dark' }
+        hex: {} as Record<number, { hex: string; textLuminance: 'light' | 'dark' }>,
+        rgb: {} as Record<number, { r: number; g: number; b: number; textLuminance: 'light' | 'dark' }>,
+        hsl: {} as Record<number, { h: number; s: number; l: number; textLuminance: 'light' | 'dark' }>
     };
 
-    for (let index = step; index < 1000; index = index + step) {
-        if (index === 1000 - lPorcentaje) {
-            const [h2, s2, l2] = convert.hex.hsl(hex);
-            const [r2, g2, b2] = convert.hex.rgb(hex);
+    for (let idx = step; idx < 1000; idx += step) {
+        let color: ColorInstance;
 
-            const textLuminance = getTextColorByLuminance(h2, s2, l2);
-
-            colors.hex[index] = { hex, textLuminance };
-            colors.hsl[index] = { h: h2, s: s2, l: l2, textLuminance };
-            colors.rgb[index] = { r: r2, g: g2, b: b2, textLuminance };
+        if (idx === mainIndex) {
+            color = baseColor;
         } else {
-            const hex = '#' + convert.hsl.hex([h, s, 100 - index / 10]);
-            const [h2, s2, l2] = convert.hex.hsl(hex);
-            const [r2, g2, b2] = convert.hex.rgb(hex);
-
-            const textLuminance = getTextColorByLuminance(h2, s2, l2);
-
-            colors.hex[index] = { hex, textLuminance };
-            colors.hsl[index] = { h: h2, s: s2, l: l2, textLuminance };
-            colors.rgb[index] = { r: r2, g: g2, b: b2, textLuminance };
+            // Variar la luminosidad manteniendo h y s
+            color = Color({ h, s, l: 100 - idx / 10 }).hsl();
         }
+
+        const hslObj = color.hsl().object();
+        const rgbObj = color.rgb().object();
+        const hexStr = color.hex().toLowerCase();
+        const textLuminance = getTextColorByLuminance(color);
+
+        colors.hex[idx] = { hex: hexStr, textLuminance };
+        colors.hsl[idx] = { 
+            h: Math.round(hslObj.h), 
+            s: Math.round(hslObj.s), 
+            l: Math.round(hslObj.l), 
+            textLuminance 
+        };
+        colors.rgb[idx] = { 
+            r: Math.round(rgbObj.r), 
+            g: Math.round(rgbObj.g), 
+            b: Math.round(rgbObj.b), 
+            textLuminance 
+        };
     }
 
     return {
         colors,
         mainColor: {
-            hex: { value: hex, textLuminance: getTextColorByLuminance(h, s, l) },
-            index,
-            rgb: colors.rgb[index],
-            hsl: colors.hsl[index]
+            hex: {value:colors.hex[mainIndex].hex, textLuminance: colors.hex[mainIndex].textLuminance},
+            index: mainIndex,
+            rgb: colors.rgb[mainIndex],
+            hsl: colors.hsl[mainIndex],
         }
     };
 };
 
-/**
- * Determina si el texto debe ser claro u oscuro según la luminancia relativa del fondo HSL.
- * Usa la fórmula de luminancia relativa (W3C) para decidir el color del texto.
- * @param {number} h - Matiz (0-360)
- * @param {number} s - Saturación (0-100)
- * @param {number} l - Luminosidad (0-100)
- * @returns {'light' | 'dark'}
- */
-const getTextColorByLuminance = (h: number, s: number, l: number): 'light' | 'dark' => {
-    // Convertir HSL a RGB (0-1)
-    s /= 100;
-    l /= 100;
 
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-    let r = 0,
-        g = 0,
-        b = 0;
-
-    if (h >= 0 && h < 60) [r, g, b] = [c, x, 0];
-    else if (h >= 60 && h < 120) [r, g, b] = [x, c, 0];
-    else if (h >= 120 && h < 180) [r, g, b] = [0, c, x];
-    else if (h >= 180 && h < 240) [r, g, b] = [0, x, c];
-    else if (h >= 240 && h < 300) [r, g, b] = [x, 0, c];
-    else if (h >= 300 && h < 360) [r, g, b] = [c, 0, x];
-
-    r += m;
-    g += m;
-    b += m;
-
-    // Luminancia relativa (W3C)
-    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-
-    // Umbral recomendado: 0.5
-    return luminance > 0.5 ? 'dark' : 'light';
+const getTextColorByLuminance = (colorInstance:ColorInstance): 'light' | 'dark' => {
+    // return ({a:colorInstance.luminosity(),b:colorInstance.luminosity() > 0.5 ? 'dark' : 'light'} ) as unknown as 'light' | 'dark';
+    // W3C recommends a threshold of 0.179 for relative luminance
+    return colorInstance.luminosity() > 0.179 ? 'dark' : 'light';
 };
 
 export { isHexColor, genPalette };
