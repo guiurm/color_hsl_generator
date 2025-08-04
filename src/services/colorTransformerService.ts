@@ -1,4 +1,5 @@
 import Color, { ColorInstance } from 'color';
+import { getOptimalTextColor, getOptimalTextColorWCAG } from './textColorLuminance';
 
 function isHexColor(hex: string) {
     const hexColorRegex = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
@@ -34,36 +35,37 @@ const genPalette = (hex: string, step = 50) => {
         const textLuminance = getTextColorByLuminance(color);
 
         colors.hex[idx] = { hex: hexStr, textLuminance };
-        colors.hsl[idx] = { 
-            h: Math.round(hslObj.h), 
-            s: Math.round(hslObj.s), 
-            l: Math.round(hslObj.l), 
-            textLuminance 
+        colors.hsl[idx] = {
+            h: Math.round(hslObj.h),
+            s: Math.round(hslObj.s),
+            l: Math.round(hslObj.l),
+            textLuminance
         };
-        colors.rgb[idx] = { 
-            r: Math.round(rgbObj.r), 
-            g: Math.round(rgbObj.g), 
-            b: Math.round(rgbObj.b), 
-            textLuminance 
+        colors.rgb[idx] = {
+            r: Math.round(rgbObj.r),
+            g: Math.round(rgbObj.g),
+            b: Math.round(rgbObj.b),
+            textLuminance
         };
     }
 
     return {
         colors,
         mainColor: {
-            hex: {value:colors.hex[mainIndex].hex, textLuminance: colors.hex[mainIndex].textLuminance},
+            hex: { value: colors.hex[mainIndex].hex, textLuminance: colors.hex[mainIndex].textLuminance },
             index: mainIndex,
             rgb: colors.rgb[mainIndex],
             hsl: colors.hsl[mainIndex],
+            textColor: getOptimalTextColor(colors.hex[mainIndex].hex),
+            textColorWCAG: getOptimalTextColorWCAG(colors.hex[mainIndex].hex)
         }
     };
 };
 
-
-const getTextColorByLuminance = (colorInstance:ColorInstance): 'light' | 'dark' => {
+const getTextColorByLuminance = (colorInstance: ColorInstance): 'light' | 'dark' => {
     // return ({a:colorInstance.luminosity(),b:colorInstance.luminosity() > 0.5 ? 'dark' : 'light'} ) as unknown as 'light' | 'dark';
     // W3C recommends a threshold of 0.179 for relative luminance
     return colorInstance.luminosity() > 0.179 ? 'dark' : 'light';
 };
 
-export { isHexColor, genPalette };
+export { genPalette, isHexColor };
