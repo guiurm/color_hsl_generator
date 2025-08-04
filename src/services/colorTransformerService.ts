@@ -1,5 +1,5 @@
 import Color, { ColorInstance } from 'color';
-import { getOptimalTextColor, getOptimalTextColorWCAG } from './textColorLuminance';
+import { getOptimalTextColor, getOptimalTextColorWCAG, TextColor } from './textColorLuminance';
 
 function isHexColor(hex: string) {
     const hexColorRegex = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
@@ -14,9 +14,32 @@ const genPalette = (hex: string, step = 50) => {
     const mainIndex = 1000 - lPorcentaje;
 
     const colors = {
-        hex: {} as Record<number, { hex: string; textLuminance: 'light' | 'dark' }>,
-        rgb: {} as Record<number, { r: number; g: number; b: number; textLuminance: 'light' | 'dark' }>,
-        hsl: {} as Record<number, { h: number; s: number; l: number; textLuminance: 'light' | 'dark' }>
+        hex: {} as Record<
+            number,
+            { hex: string; textLuminance: 'light' | 'dark'; textColor: TextColor; textColorWCAG: TextColor }
+        >,
+        rgb: {} as Record<
+            number,
+            {
+                r: number;
+                g: number;
+                b: number;
+                textLuminance: 'light' | 'dark';
+                textColor: TextColor;
+                textColorWCAG: TextColor;
+            }
+        >,
+        hsl: {} as Record<
+            number,
+            {
+                h: number;
+                s: number;
+                l: number;
+                textLuminance: 'light' | 'dark';
+                textColor: TextColor;
+                textColorWCAG: TextColor;
+            }
+        >
     };
 
     for (let idx = step; idx < 1000; idx += step) {
@@ -34,18 +57,33 @@ const genPalette = (hex: string, step = 50) => {
         const hexStr = color.hex().toLowerCase();
         const textLuminance = getTextColorByLuminance(color);
 
-        colors.hex[idx] = { hex: hexStr, textLuminance };
+        const textColor = getOptimalTextColor(hexStr);
+        const textColorWCAG = getOptimalTextColorWCAG(hexStr);
+
+        colors.hex[idx] = {
+            hex: hexStr,
+            textLuminance,
+
+            textColor,
+            textColorWCAG
+        };
         colors.hsl[idx] = {
             h: Math.round(hslObj.h),
             s: Math.round(hslObj.s),
             l: Math.round(hslObj.l),
-            textLuminance
+            textLuminance,
+
+            textColor,
+            textColorWCAG
         };
         colors.rgb[idx] = {
             r: Math.round(rgbObj.r),
             g: Math.round(rgbObj.g),
             b: Math.round(rgbObj.b),
-            textLuminance
+            textLuminance,
+
+            textColor,
+            textColorWCAG
         };
     }
 

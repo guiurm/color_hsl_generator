@@ -21,7 +21,7 @@ interface ContrastAnalysis {
 }
 
 type WCAGLevel = 'AAA' | 'AA' | 'FAIL';
-type TextColor = '#ffffff' | '#000000';
+export type TextColor = '#ffffff' | '#000000';
 
 const WCAG_THRESHOLDS = {
     AA: 4.5,
